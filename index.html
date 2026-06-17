@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaSu Peer</title>
+    <style>
+        :root {
+            --bg: #0b0b12;
+            --surface: #151520;
+            --surface2: #1c1c2a;
+            --border: #2a2a3a;
+            --text: #eaeaf0;
+            --text-secondary: #9090a8;
+            --accent: #6d8aff;
+            --accent-hover: #8099ff;
+            --accent-glow: rgba(109, 138, 255, 0.2);
+            --success: #4caf84;
+            --success-bg: rgba(76, 175, 132, 0.1);
+            --danger: #e0556a;
+            --danger-hover: #f06072;
+            --warning: #d4a844;
+            --warning-bg: rgba(212, 168, 68, 0.1);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.5);
+            --transition: 0.2s ease;
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:20px;
+            -webkit-font-smoothing: antialiased;
+        }
+        .app-container {
+            width:100%;
+            max-width:920px;
+            background: var(--surface);
+            border-radius:20px;
+            box-shadow: var(--shadow);
+            border:1px solid var(--border);
+            overflow:hidden;
+            min-height:540px;
+            display:flex;
+            flex-direction:column;
+        }
+        .app-header {
+            padding:18px 24px;
+            border-bottom:1px solid var(--border);
+            display:flex;
+            align-items:center;
+            gap:12px;
+            background: var(--surface2);
+        }
+        .app-logo {
+            width:40px;
+            height:40px;
+            border-radius:12px;
+            background: var(--accent);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-weight:700;
+            font-size:20px;
+            color:#fff;
+            flex-shrink:0;
+        }
+        .app-title {
+            font-size:1.3rem;
+            font-weight:600;
+            letter-spacing:-0.02em;
+        }
+        .app-subtitle {
+            font-size:0.8rem;
+            color:var(--text-secondary);
+            font-weight:400;
+        }
+        .app-body {
+            flex:1;
+            padding:24px;
+            display:flex;
+            flex-direction:column;
+            gap:20px;
+        }
+        .screen { display:none; flex-direction:column; gap:20px; flex:1; }
+        .screen.active { display:flex; }
+
+        .username-form {
+            display:flex;
+            flex-direction:column;
+            gap:16px;
+            align-items:center;
+            justify-content:center;
+            flex:1;
+            max-width:400px;
+            margin:0 auto;
+            width:100%;
+        }
+        .username-form label {
+            font-size:0.95rem;
+            color:var(--text-secondary);
+            text-align:center;
+        }
+        .input-group {
+            display:flex;
+            gap:10px;
+            width:100%;
+        }
+        .input-group input {
+            flex:1;
+            padding:12px 16px;
+            border-radius:var(--radius-sm);
+            border:1.5px solid var(--border);
+            background:var(--bg);
+            color:var(--text);
+            font-size:1rem;
+            font-family:var(--font);
+            outline:none;
+            transition:var(--transition);
+        }
+        .input-group input:focus {
+            border-color:var(--accent);
+            box-shadow:0 0 0 3px var(--accent-glow);
+        }
+        .btn {
+            padding:10px 20px;
+            border-radius:var(--radius-sm);
+            font-weight:600;
+            font-size:0.9rem;
+            cursor:pointer;
+            border:none;
+            font-family:var(--font);
+            transition:var(--transition);
+            white-space:nowrap;
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+        }
+        .btn-primary { background:var(--accent); color:#fff; }
+        .btn-primary:hover:not(:disabled) {
+            background:var(--accent-hover);
+            transform:translateY(-1px);
+            box-shadow:0 4px 16px var(--accent-glow);
+        }
+        .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-danger:hover { background:var(--danger-hover); }
+        .btn-outline { background:transparent; border:1.5px solid var(--border); color:var(--text); }
+        .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+        .btn-sm { padding:7px 14px; font-size:0.8rem; }
+        .error-msg { color:var(--danger); font-size:0.85rem; text-align:center; min-height:20px; }
+
+        .users-header {
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+        }
+        .user-badge {
+            background:var(--success-bg); color:var(--success); padding:4px 12px;
+            border-radius:20px; font-size:0.8rem; font-weight:600;
+        }
+        .user-list {
+            display:flex; flex-direction:column; gap:8px; flex:1; overflow-y:auto; max-height:350px;
+        }
+        .user-list:empty::after {
+            content:'No other users online'; color:var(--text-secondary); text-align:center;
+            padding:40px; font-style:italic; display:block;
+        }
+        .user-row {
+            display:flex; align-items:center; justify-content:space-between; padding:12px 16px;
+            background:var(--surface2); border-radius:var(--radius-sm); border:1px solid transparent;
+            transition:var(--transition); gap:10px;
+        }
+        .user-row:hover { border-color:var(--border); }
+        .status-dot {
+            width:8px; height:8px; border-radius:50%; background:var(--success);
+            flex-shrink:0; box-shadow:0 0 8px rgba(76,175,132,0.5);
+        }
+        .my-username-display { font-size:0.85rem; color:var(--text-secondary); }
+
+        .connecting-animation {
+            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; flex:1;
+        }
+        .spinner-large {
+            width:44px; height:44px; border:3px solid var(--border);
+            border-top-color:var(--accent); border-radius:50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        .transfer-container { display:flex; gap:20px; flex:1; min-height:360px; }
+        @media (max-width:640px) { .transfer-container { flex-direction:column; } }
+        .transfer-pane {
+            flex:1; background:var(--surface2); border-radius:var(--radius); padding:20px;
+            display:flex; flex-direction:column; gap:12px; border:1px solid var(--border); min-width:0;
+        }
+        .transfer-pane h4 {
+            font-size:0.85rem; font-weight:600; color:var(--text-secondary);
+            text-transform:uppercase; letter-spacing:0.05em; display:flex; align-items:center; gap:8px;
+        }
+        .icon-dot { width:10px; height:10px; border-radius:50%; }
+        .icon-local { background:var(--accent); box-shadow:0 0 8px var(--accent-glow); }
+        .icon-remote { background:var(--success); box-shadow:0 0 8px rgba(76,175,132,0.5); }
+        .file-list {
+            flex:1; overflow-y:auto; display:flex; flex-direction:column;
+            gap:8px; max-height:250px; min-height:60px;
+        }
+        .file-list:empty::after {
+            content:'No files yet'; color:var(--text-secondary); font-size:0.8rem;
+            text-align:center; padding:20px; font-style:italic; display:block;
+        }
+        .file-entry {
+            background:var(--bg); border-radius:var(--radius-sm); padding:10px 14px;
+            display:flex; flex-direction:column; gap:6px; border:1px solid var(--border); font-size:0.85rem;
+        }
+        .progress-bar-wrap { background:var(--border); border-radius:6px; height:6px; overflow:hidden; }
+        .progress-bar-fill {
+            height:100%; background:var(--accent); border-radius:6px; transition:width 0.3s ease; width:0%;
+        }
+        .progress-bar-fill.complete { background:var(--success); }
+        .file-status.sending { color:var(--accent); }
+        .file-status.receiving { color:var(--warning); }
+        .file-status.done { color:var(--success); }
+        .download-link {
+            font-size:0.8rem; color:var(--accent); cursor:pointer;
+            text-decoration:underline; word-break:break-all;
+        }
+
+        .notification {
+            position:fixed; top:20px; right:20px; background:var(--surface2);
+            border:1px solid var(--border); border-radius:var(--radius-sm);
+            padding:14px 20px; z-index:200; font-size:0.9rem; box-shadow:var(--shadow);
+            animation:slideIn 0.3s ease; max-width:380px;
+        }
+        .notification.info { border-left:3px solid var(--accent); }
+        .notification.warn { border-left:3px solid var(--warning); }
+        .notification.error { border-left:3px solid var(--danger); }
+        @keyframes slideIn {
+            from { transform:translateX(100%); opacity:0; }
+            to { transform:translateX(0); opacity:1; }
+        }
+        .modal-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:100;
+            display:flex; align-items:center; justify-content:center; padding:20px;
+        }
+        .modal {
+            background:var(--surface); border-radius:var(--radius); border:1px solid var(--border);
+            padding:28px; max-width:420px; width:100%; text-align:center; display:flex; flex-direction:column; gap:16px;
+        }
+        .peer-info {
+            display:flex; align-items:center; justify-content:space-between; gap:10px;
+            padding:10px 16px; background:var(--surface2); border-radius:var(--radius-sm); border:1px solid var(--border);
+        }
+        .timer-warning { color:var(--warning); font-size:0.75rem; text-align:center; margin-top:-10px; }
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="app-header">
+        <div class="app-logo">MS</div>
+        <div>
+            <div class="app-title">MaSu Peer</div>
+            <div class="app-subtitle">Peer‑to‑Peer File Transfer</div>
+        </div>
+    </div>
+    <div class="app-body">
+        <div id="screen-username" class="screen active">
+            <form class="username-form" id="username-form" autocomplete="off">
+                <label for="username-input">Choose a unique username to get started</label>
+                <div class="input-group">
+                    <input type="text" id="username-input" placeholder="e.g. Manoj_Prashad_Bhatta" maxlength="30" autofocus>
+                    <button type="submit" class="btn btn-primary" id="btn-join">Join</button>
+                </div>
+                <div class="error-msg" id="username-error"></div>
+            </form>
+        </div>
+
+        <div id="screen-users" class="screen">
+            <div class="users-header">
+                <h3>🟢 Online Users</h3>
+                <span class="user-badge" id="online-count">0 online</span>
+            </div>
+            <div class="my-username-display">You are: <strong id="my-username-display">—</strong></div>
+            <div class="user-list" id="user-list"></div>
+            <div id="inactive-timer-warning" class="timer-warning"></div>
+            <button class="btn btn-outline btn-sm" id="btn-disconnect-main" style="align-self:flex-start;">Disconnect & Leave</button>
+        </div>
+
+        <div id="screen-connecting" class="screen">
+            <div class="connecting-animation">
+                <div class="spinner-large"></div>
+                <p>Establishing secure connection with <strong id="connecting-peer-name">...</strong></p>
+                <p style="color:var(--text-secondary);font-size:0.85rem;">Negotiating secure path...</p>
+            </div>
+        </div>
+
+        <div id="screen-transfer" class="screen">
+            <div class="peer-info">
+                <span>Connected to: <strong id="remote-peer-name">—</strong></span>
+                <button class="btn btn-danger btn-sm" id="btn-disconnect-peer">Disconnect</button>
+            </div>
+            <div class="transfer-container">
+                <div class="transfer-pane" id="pane-local">
+                    <h4><span class="icon-dot icon-local"></span> Sent Files</h4>
+                    <div class="file-list" id="sent-file-list"></div>
+                    <div>
+                        <input type="file" id="file-input" multiple>
+                        <label for="file-input" class="btn btn-primary btn-sm" style="cursor:pointer;">📎 Select Files</label>
+                        <span style="font-size:0.75rem;color:var(--text-secondary);margin-left:8px;" id="queue-indicator"></span>
+                    </div>
+                </div>
+                <div class="transfer-pane" id="pane-remote">
+                    <h4><span class="icon-dot icon-remote"></span> Received Files</h4>
+                    <div class="file-list" id="received-file-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+(function() {
+    const firebaseConfig = {
+        apiKey: "AIzaSyBS76VGX_giebKUB2jBfJTh0EZG-KB0PNo",
+        authDomain: "massive-file-send.firebaseapp.com",
+        databaseURL: "https://massive-file-send-default-rtdb.firebaseio.com",
+        projectId: "massive-file-send",
+        storageBucket: "massive-file-send.firebasestorage.app",
+        messagingSenderId: "170259765835",
+        appId: "1:170259765835:web:4c2dd08c043b795b5c4bce"
+    };
+
+    // Swapped to a highly redundant list of free STUN servers to fix NAT issues
+    const iceServers = [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun4.l.google.com:19302" }
+    ];
+
+    const CHUNK_SIZE = 16384;
+    const HEARTBEAT_INTERVAL = 30000;
+    const INACTIVITY_TIMEOUT = 60000;
+    const FULL_RESET_TIMEOUT = 3600000;
+    const CONNECTION_TIMEOUT = 35000; 
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // --- State Variables ---
+    let myUsername = null;
+    let peerConnection = null;
+    let dataChannel = null;
+    let isCaller = false;
+    let remotePeerUsername = null;
+    let currentRequestId = null;
+    
+    // Listeners
+    let userListListener = null;
+    let requestListener = null;
+    let sdpListener = null;
+    let iceListener = null;
+
+    let pendingIceCandidates = [];
+    let transferScreenShown = false;
+    let connectionInProgress = false;
+    let offerProcessed = false;
+    let answerProcessed = false;
+
+    // Timers
+    let heartbeatTimer = null;
+    let inactivityTimer = null;
+    let fullResetTimer = null;
+    let connectionTimeoutId = null;
+
+    // File transfer
+    let sendQueue = [];
+    let isSending = false;
+    let currentSendFile = null;
+    let currentSendId = null;
+    let currentSendChunksTotal = 0;
+    let currentSendChunksSent = 0;
+    let incomingTransfers = {};
+
+    // --- DOM Elements ---
+    const screenUsername = document.getElementById('screen-username');
+    const screenUsers = document.getElementById('screen-users');
+    const screenConnecting = document.getElementById('screen-connecting');
+    const screenTransfer = document.getElementById('screen-transfer');
+    const usernameForm = document.getElementById('username-form');
+    const usernameInput = document.getElementById('username-input');
+    const usernameError = document.getElementById('username-error');
+    const btnJoin = document.getElementById('btn-join');
+    const userList = document.getElementById('user-list');
+    const onlineCount = document.getElementById('online-count');
+    const myUsernameDisplay = document.getElementById('my-username-display');
+    const btnDisconnectMain = document.getElementById('btn-disconnect-main');
+    const btnDisconnectPeer = document.getElementById('btn-disconnect-peer');
+    const remotePeerName = document.getElementById('remote-peer-name');
+    const connectingPeerName = document.getElementById('connecting-peer-name');
+    const fileInput = document.getElementById('file-input');
+    const sentFileList = document.getElementById('sent-file-list');
+    const receivedFileList = document.getElementById('received-file-list');
+    const queueIndicator = document.getElementById('queue-indicator');
+    const inactiveTimerWarning = document.getElementById('inactive-timer-warning');
+
+    // --- Utilities ---
+    function showScreen(screen) {
+        [screenUsername, screenUsers, screenConnecting, screenTransfer].forEach(s => s.classList.remove('active'));
+        screen.classList.add('active');
+    }
+    function notify(msg, type='info') {
+        console.log(`[${type.toUpperCase()}] ${msg}`);
+        const el = document.createElement('div');
+        el.className = 'notification '+type; el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),300); },4000);
+    }
+    function sanitize(u) { return u.trim().replace(/[.#$\/\[\]]/g,'_'); }
+    function uid() { return Date.now().toString(36)+Math.random().toString(36).substring(2,8); }
+    function fmtSize(b) {
+        if(b<1024) return b+' B';
+        if(b<1048576) return (b/1024).toFixed(1)+' KB';
+        if(b<1073741824) return (b/1048576).toFixed(2)+' MB';
+        return (b/1073741824).toFixed(2)+' GB';
+    }
+    function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+    // --- Timer Management ---
+    function clearAllTimers() {
+        if(heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer=null; }
+        if(inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer=null; }
+        if(fullResetTimer) { clearTimeout(fullResetTimer); fullResetTimer=null; }
+        if(connectionTimeoutId) { clearTimeout(connectionTimeoutId); connectionTimeoutId=null; }
+        inactiveTimerWarning.textContent='';
+    }
+
+    function startHeartbeat() {
+        if(heartbeatTimer) clearInterval(heartbeatTimer);
+        heartbeatTimer = setInterval(async () => {
+            if(myUsername) {
+                try { await db.ref('users/'+myUsername).update({ online: true, lastSeen: firebase.database.ServerValue.TIMESTAMP }); } catch(e) {}
+            }
+        }, HEARTBEAT_INTERVAL);
+    }
+
+    function startInactivityTimer() {
+        if(inactivityTimer) clearTimeout(inactivityTimer);
+        let remaining = INACTIVITY_TIMEOUT / 1000;
+        inactiveTimerWarning.textContent = `Disconnecting in ${remaining}s if idle.`;
+        const tick = setInterval(() => {
+            remaining--;
+            if(remaining <= 0) { clearInterval(tick); inactiveTimerWarning.textContent = ''; } 
+            else { inactiveTimerWarning.textContent = `Disconnecting in ${remaining}s if idle.`; }
+        }, 1000);
+
+        inactivityTimer = setTimeout(async () => {
+            clearInterval(tick);
+            if(!connectionInProgress && !dataChannel && !transferScreenShown) {
+                notify('Disconnected due to inactivity.', 'warn');
+                await fullCleanup();
+                showScreen(screenUsername);
+                usernameInput.value=''; usernameError.textContent=''; btnJoin.disabled=false;
+            }
+            inactiveTimerWarning.textContent='';
+        }, INACTIVITY_TIMEOUT);
+    }
+
+    function resetInactivityTimer() {
+        if(screenUsers.classList.contains('active') && !connectionInProgress && !transferScreenShown) {
+            startInactivityTimer();
+        }
+    }
+
+    function startFullResetTimer() {
+        if(fullResetTimer) clearTimeout(fullResetTimer);
+        fullResetTimer = setTimeout(async () => {
+            notify('Session expired. Resetting...', 'warn');
+            await fullCleanup();
+            showScreen(screenUsername);
+            usernameInput.value=''; usernameError.textContent=''; btnJoin.disabled=false;
+        }, FULL_RESET_TIMEOUT);
+    }
+
+    function startConnectionTimeout() {
+        if(connectionTimeoutId) clearTimeout(connectionTimeoutId);
+        connectionTimeoutId = setTimeout(() => {
+            if(peerConnection && peerConnection.connectionState !== 'connected') {
+                notify('Connection timed out. P2P path failed.', 'error');
+                handlePeerDisconnect();
+            }
+        }, CONNECTION_TIMEOUT);
+    }
+
+    function clearConnectionTimeout() {
+        if(connectionTimeoutId) { clearTimeout(connectionTimeoutId); connectionTimeoutId=null; }
+    }
+
+    // --- Cleanup & Reset ---
+    function detachListeners() {
+        if(userListListener) { db.ref('users').off('value', userListListener); userListListener=null; }
+        if(myUsername) {
+            if(requestListener) { db.ref('signaling/'+myUsername+'/request').off('value', requestListener); requestListener=null; }
+            if(sdpListener) { db.ref('signaling/'+myUsername+'/sdp').off('value', sdpListener); sdpListener=null; }
+            if(iceListener) { db.ref('signaling/'+myUsername+'/ice').off('child_added', iceListener); iceListener=null; }
+        }
+    }
+
+    function closePC() {
+        clearConnectionTimeout();
+        if(peerConnection) {
+            peerConnection.onicecandidate=null; peerConnection.ontrack=null;
+            peerConnection.ondatachannel=null; peerConnection.onconnectionstatechange=null;
+            peerConnection.oniceconnectionstatechange=null;
+            if(dataChannel) {
+                dataChannel.onmessage=null; dataChannel.onopen=null; dataChannel.onclose=null; dataChannel.onerror=null; dataChannel=null;
+            }
+            peerConnection.close();
+            peerConnection=null;
+        }
+        pendingIceCandidates=[]; isCaller=false; remotePeerUsername=null; currentRequestId=null;
+        offerProcessed=false; answerProcessed=false;
+        sendQueue=[]; isSending=false; currentSendFile=null; currentSendId=null; currentSendChunksTotal=0; currentSendChunksSent=0;
+        incomingTransfers={};
+        sentFileList.innerHTML=''; receivedFileList.innerHTML=''; queueIndicator.textContent='';
+        transferScreenShown=false; connectionInProgress=false;
+    }
+
+    async function cleanSignalling() {
+        if(myUsername) { try{ await db.ref('signaling/'+myUsername).remove(); }catch(e){} }
+    }
+
+    async function fullCleanup() {
+        clearAllTimers();
+        detachListeners();
+        closePC();
+        await cleanSignalling();
+        if(myUsername) { try{ await db.ref('users/'+myUsername).remove(); }catch(e){} }
+        myUsername=null;
+    }
+
+    // --- Presence ---
+    async function setupPresence(username) {
+        const userRef = db.ref('users/'+username);
+        await userRef.set({ online: true, lastSeen: firebase.database.ServerValue.TIMESTAMP });
+        userRef.onDisconnect().remove();
+        db.ref('signaling/'+username).onDisconnect().remove();
+    }
+
+    function listenUsers() {
+        if(userListListener) db.ref('users').off('value', userListListener);
+        userListListener = db.ref('users').on('value', snap => {
+            const users = snap.val() || {};
+            const now = Date.now();
+            const online = [];
+            for(const [username, val] of Object.entries(users)) {
+                if(username === myUsername) continue;
+                if(val && val.online === true && val.lastSeen) {
+                    if(now - val.lastSeen < 60000) online.push(username);
+                    else { db.ref('users/'+username).remove().catch(()=>{}); }
+                } else { db.ref('users/'+username).remove().catch(()=>{}); }
+            }
+            onlineCount.textContent = online.length + ' online';
+            renderUserList(online);
+        });
+    }
+
+    function renderUserList(online) {
+        userList.innerHTML='';
+        if(online.length===0) return;
+        online.forEach(u => {
+            const row = document.createElement('div'); row.className='user-row';
+            row.innerHTML = `<span><span class="status-dot"></span> ${esc(u)}</span>
+                <button class="btn btn-primary btn-sm" data-username="${esc(u)}">Connect</button>`;
+            row.querySelector('button').onclick = ()=> initiateConnection(u);
+            userList.appendChild(row);
+        });
+    }
+
+    // --- REWRITTEN SIGNALLING LOGIC ---
+    function listenSignalling() {
+        const rootRef = db.ref('signaling/'+myUsername);
+        
+        // 1. Listen for connection requests & responses
+        if(requestListener) rootRef.child('request').off('value', requestListener);
+        requestListener = rootRef.child('request').on('value', async snap => {
+            const data = snap.val();
+            if(!data) return;
+
+            if(data.status === 'pending' && data.from && data.from !== myUsername) {
+                handleIncomingRequest(data.from, data.requestId);
+            } 
+            else if(data.status === 'accepted' && data.from === remotePeerUsername && isCaller && currentRequestId) {
+                handleRequestAccepted();
+            } 
+            else if(data.status === 'rejected' && data.from === remotePeerUsername) {
+                notify('Connection request rejected.', 'warn');
+                await cleanSignalling();
+                connectionInProgress=false; currentRequestId=null; resetInactivityTimer();
+            }
+        });
+
+        // 2. Listen for SDP Offers/Answers
+        if(sdpListener) rootRef.child('sdp').off('value', sdpListener);
+        sdpListener = rootRef.child('sdp').on('value', async snap => {
+            const data = snap.val();
+            if(!data || !peerConnection) return;
+            
+            if(data.type === 'offer' && !isCaller && !offerProcessed) {
+                offerProcessed = true;
+                await handleRemoteOffer(data.sdp);
+            } 
+            else if(data.type === 'answer' && isCaller && !answerProcessed) {
+                answerProcessed = true;
+                await handleRemoteAnswer(data.sdp);
+            }
+        });
+
+        // 3. Listen for ICE Candidates
+        if(iceListener) rootRef.child('ice').off('child_added', iceListener);
+        iceListener = rootRef.child('ice').on('child_added', async snap => {
+            const cand = snap.val();
+            if(cand && cand.candidate && peerConnection) {
+                try {
+                    const c = new RTCIceCandidate(cand.candidate);
+                    if(peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+                        await peerConnection.addIceCandidate(c);
+                    } else {
+                        pendingIceCandidates.push(c);
+                    }
+                } catch(e) { console.error("ICE Error:", e); }
+                try { await snap.ref.remove(); } catch(e){}
+            }
+        });
+    }
+
+    // --- Connection Flow ---
+    async function initiateConnection(target) {
+        if(inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer=null; inactiveTimerWarning.textContent=''; }
+        connectionInProgress = true;
+
+        const check = await db.ref('signaling/'+target+'/request').once('value');
+        if(check.exists()) { notify('User is busy.', 'warn'); connectionInProgress=false; resetInactivityTimer(); return; }
+        
+        currentRequestId = uid();
+        remotePeerUsername = target;
+        isCaller = true;
+        offerProcessed = false; answerProcessed = false;
+        
+        showScreen(screenConnecting);
+        connectingPeerName.textContent = target;
+        
+        // Write the request to a dedicated node
+        const reqRef = db.ref('signaling/'+target+'/request');
+        reqRef.onDisconnect().remove();
+        await reqRef.set({ status: 'pending', from: myUsername, requestId: currentRequestId });
+        
+        listenSignalling();
+        notify('Request sent to '+target, 'info');
+    }
+
+    function handleIncomingRequest(from, reqId) {
+        if(inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer=null; inactiveTimerWarning.textContent=''; }
+        connectionInProgress = true;
+
+        document.querySelector('.modal-overlay')?.remove();
+        const overlay = document.createElement('div'); overlay.className='modal-overlay';
+        overlay.innerHTML = `<div class="modal">
+            <h3>📩 Connection Request</h3>
+            <p><strong>${esc(from)}</strong> wants to connect.</p>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="btn-accept">Accept</button>
+                <button class="btn btn-outline" id="btn-reject">Reject</button>
+            </div></div>`;
+        document.body.appendChild(overlay);
+        
+        overlay.querySelector('#btn-accept').onclick = ()=> { overlay.remove(); acceptRequest(from, reqId); };
+        overlay.querySelector('#btn-reject').onclick = ()=> { overlay.remove(); rejectRequest(from); };
+    }
+
+    async function acceptRequest(from, reqId) {
+        await db.ref('signaling/'+myUsername+'/request').remove(); // Clear my pending state
+        
+        remotePeerUsername = from;
+        isCaller = false;
+        currentRequestId = reqId;
+        offerProcessed = false; answerProcessed = false;
+
+        showScreen(screenConnecting);
+        connectingPeerName.textContent = from;
+        
+        await createPC(false);
+        listenSignalling();
+        
+        // Tell caller we accepted
+        const reqRef = db.ref('signaling/'+from+'/request');
+        reqRef.onDisconnect().remove();
+        await reqRef.set({ status: 'accepted', from: myUsername, requestId: reqId });
+        
+        notify('Accepted. Waiting for WebRTC offer...', 'info');
+    }
+
+    async function rejectRequest(from) {
+        await db.ref('signaling/'+myUsername+'/request').remove();
+        await db.ref('signaling/'+from+'/request').set({ status: 'rejected', from: myUsername });
+        connectionInProgress=false; resetInactivityTimer();
+    }
+
+    async function handleRequestAccepted() {
+        notify('Request accepted! Creating WebRTC offer...', 'info');
+        await createPC(true);
+        await createAndSendOffer();
+    }
+
+    // --- WebRTC Setup ---
+    async function createPC(caller) {
+        closePC();
+        isCaller = caller;
+        peerConnection = new RTCPeerConnection({ iceServers });
+        
+        peerConnection.onicecandidate = e => {
+            if(e.candidate && remotePeerUsername) {
+                // Push ICE directly to the dedicated ICE node, eliminating race conditions
+                const ref = db.ref('signaling/'+remotePeerUsername+'/ice').push();
+                ref.set({ candidate: e.candidate.toJSON() });
+                ref.onDisconnect().remove();
+            }
+        };
+
+        peerConnection.onconnectionstatechange = () => {
+            const st = peerConnection.connectionState;
+            console.log('WebRTC Connection State:', st);
+            if(st==='connected') { clearConnectionTimeout(); maybeShowTransfer(); } 
+            else if(st==='failed' || st==='disconnected' || st==='closed') {
+                notify('P2P connection failed or disconnected.', 'error');
+                clearConnectionTimeout(); handlePeerDisconnect();
+            }
+        };
+
+        if(caller) {
+            dataChannel = peerConnection.createDataChannel('fileTransfer', { ordered:true });
+            setupDataChannel(dataChannel);
+        } else {
+            peerConnection.ondatachannel = e => { dataChannel = e.channel; setupDataChannel(dataChannel); };
+        }
+        startConnectionTimeout();
+    }
+
+    function setupDataChannel(dc) {
+        dc.binaryType = 'arraybuffer';
+        dc.onopen = () => { clearConnectionTimeout(); maybeShowTransfer(); };
+        dc.onclose = ()=> notify('Data channel closed.', 'warn');
+        dc.onmessage = handleDataChannelMsg;
+    }
+
+    function maybeShowTransfer() {
+        if(transferScreenShown) return;
+        if(peerConnection && peerConnection.connectionState==='connected' && dataChannel && dataChannel.readyState==='open') {
+            transferScreenShown = true; connectionInProgress = false;
+            if(inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer=null; inactiveTimerWarning.textContent=''; }
+            remotePeerName.textContent = remotePeerUsername || '—';
+            showScreen(screenTransfer);
+            cleanSignalling().catch(()=>{});
+            notify('Connected! Secure P2P path established.', 'success');
+        }
+    }
+
+    async function createAndSendOffer() {
+        try {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            // Write to dedicated SDP node
+            const sdpRef = db.ref('signaling/'+remotePeerUsername+'/sdp');
+            sdpRef.onDisconnect().remove();
+            await sdpRef.set({ type: 'offer', sdp: peerConnection.localDescription.sdp });
+            processPendingIce();
+        } catch(e) { notify('Failed to create offer: '+e.message, 'error'); }
+    }
+
+    async function handleRemoteOffer(sdpStr) {
+        try {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription({ type:'offer', sdp: sdpStr }));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            // Write to dedicated SDP node
+            const sdpRef = db.ref('signaling/'+remotePeerUsername+'/sdp');
+            sdpRef.onDisconnect().remove();
+            await sdpRef.set({ type: 'answer', sdp: peerConnection.localDescription.sdp });
+            processPendingIce();
+        } catch(e) { notify('Failed to process offer: '+e.message, 'error'); }
+    }
+
+    async function handleRemoteAnswer(sdpStr) {
+        try {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription({ type:'answer', sdp: sdpStr }));
+            processPendingIce();
+        } catch(e) { notify('Failed to process answer: '+e.message, 'error'); }
+    }
+
+    function processPendingIce() {
+        if(!peerConnection || !peerConnection.remoteDescription || !peerConnection.remoteDescription.type) return;
+        while(pendingIceCandidates.length > 0) {
+            peerConnection.addIceCandidate(pendingIceCandidates.shift()).catch(e=>console.error(e));
+        }
+    }
+
+    function handlePeerDisconnect() {
+        clearConnectionTimeout(); closePC(); cleanSignalling().catch(()=>{});
+        connectionInProgress = false; showScreen(screenUsers);
+        listenUsers(); listenSignalling(); resetInactivityTimer();
+    }
+
+    // --- File Transfer Logic (Untouched from working version) ---
+    function handleDataChannelMsg(e) {
+        if(typeof e.data === 'string') { try { handleJSON(JSON.parse(e.data)); } catch(ex) {} } 
+        else if(e.data instanceof ArrayBuffer) { handleBinaryChunk(e.data); }
+    }
+
+    function handleJSON(msg) {
+        switch(msg.type) {
+            case 'file-meta': handleFileMeta(msg); break;
+            case 'file-meta-ack': handleFileMetaAck(msg); break;
+            case 'file-complete': handleFileComplete(msg); break;
+        }
+    }
+
+    fileInput.addEventListener('change', ()=> {
+        if(fileInput.files.length>0) { enqueueFiles(fileInput.files); fileInput.value=''; }
+    });
+
+    function enqueueFiles(files) {
+        for(let f of files) sendQueue.push(f);
+        updateQueue(); if(!isSending) processSendQueue();
+    }
+    function updateQueue() { queueIndicator.textContent = sendQueue.length ? sendQueue.length+' file(s) queued' : ''; }
+
+    async function processSendQueue() {
+        if(sendQueue.length===0) { isSending=false; updateQueue(); return; }
+        if(!dataChannel || dataChannel.readyState!=='open') { setTimeout(processSendQueue,300); return; }
+        isSending=true; currentSendFile = sendQueue.shift(); updateQueue(); currentSendId = uid();
+        currentSendChunksTotal = Math.ceil(currentSendFile.size/CHUNK_SIZE); currentSendChunksSent = 0;
+        const entry = createSentEntry(currentSendFile.name, currentSendFile.size, currentSendId);
+        sentFileList.appendChild(entry);
+        dataChannel.send(JSON.stringify({ type:'file-meta', name:currentSendFile.name, size:currentSendFile.size, id:currentSendId }));
+    }
+
+    function handleFileMetaAck(msg) { if(msg.id===currentSendId) sendChunks(); }
+
+    function sendChunks() {
+        if(!currentSendFile || !dataChannel || dataChannel.readyState!=='open') return;
+        const file = currentSendFile; const total = currentSendChunksTotal; let offset = currentSendChunksSent * CHUNK_SIZE;
+
+        function next() {
+            if(offset >= file.size) {
+                dataChannel.send(JSON.stringify({ type:'file-complete', id:currentSendId }));
+                updateSent(currentSendId, 100, 'complete');
+                currentSendFile=null; currentSendId=null; currentSendChunksTotal=0; currentSendChunksSent=0;
+                processSendQueue(); return;
+            }
+            const end = Math.min(offset+CHUNK_SIZE, file.size);
+            const blob = file.slice(offset, end);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if(dataChannel && dataChannel.readyState==='open') {
+                    dataChannel.send(e.target.result); currentSendChunksSent++;
+                    const pct = Math.round((currentSendChunksSent/total)*100);
+                    updateSent(currentSendId, pct, 'sending'); offset = currentSendChunksSent * CHUNK_SIZE;
+                    setTimeout(next, 0);
+                }
+            };
+            reader.onerror = ()=>{ notify('Error reading file.', 'error'); processSendQueue(); };
+            reader.readAsArrayBuffer(blob);
+        }
+        next();
+    }
+
+    function createSentEntry(name, size, id) {
+        const d = document.createElement('div'); d.className='file-entry'; d.dataset.tid=id;
+        d.innerHTML = `<div class="file-name">📤 ${esc(name)}</div><div class="file-size">${fmtSize(size)}</div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:0%"></div></div>
+            <div class="file-status sending">Preparing...</div>`;
+        return d;
+    }
+    function updateSent(id, pct, status) {
+        const el = sentFileList.querySelector(`[data-tid="${id}"]`); if(!el) return;
+        const bar = el.querySelector('.progress-bar-fill'); const st = el.querySelector('.file-status');
+        bar.style.width = pct+'%';
+        if(status==='complete') { bar.classList.add('complete'); st.textContent='Sent ✓'; st.className='file-status done'; }
+        else { st.textContent='Sending... '+pct+'%'; st.className='file-status sending'; }
+    }
+
+    function handleFileMeta(msg) {
+        incomingTransfers[msg.id] = { name:msg.name, size:msg.size, chunks:[], receivedBytes:0 };
+        const entry = createReceivedEntry(msg.name, msg.size, msg.id);
+        receivedFileList.appendChild(entry);
+        if(dataChannel && dataChannel.readyState==='open') dataChannel.send(JSON.stringify({ type:'file-meta-ack', id:msg.id }));
+    }
+
+    function handleBinaryChunk(buffer) {
+        const ids = Object.keys(incomingTransfers);
+        for(let id of ids) {
+            const t = incomingTransfers[id];
+            if(t.receivedBytes < t.size) {
+                t.chunks.push(buffer); t.receivedBytes += buffer.byteLength;
+                const pct = Math.min(100, Math.round((t.receivedBytes/t.size)*100));
+                updateReceived(id, pct, 'receiving'); return;
+            }
+        }
+    }
+
+    function handleFileComplete(msg) {
+        const t = incomingTransfers[msg.id]; if(!t) return;
+        const blob = new Blob(t.chunks); const url = URL.createObjectURL(blob);
+        updateReceived(msg.id, 100, 'complete', url, t.name); delete incomingTransfers[msg.id];
+    }
+
+    function createReceivedEntry(name, size, id) {
+        const d = document.createElement('div'); d.className='file-entry'; d.dataset.tid=id;
+        d.innerHTML = `<div class="file-name">📥 ${esc(name)}</div><div class="file-size">${fmtSize(size)}</div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:0%"></div></div>
+            <div class="file-status receiving">Receiving...</div>`;
+        return d;
+    }
+    function updateReceived(id, pct, status, url, name) {
+        const el = receivedFileList.querySelector(`[data-tid="${id}"]`); if(!el) return;
+        const bar = el.querySelector('.progress-bar-fill'); const st = el.querySelector('.file-status');
+        bar.style.width = pct+'%';
+        if(status==='complete') {
+            bar.classList.add('complete'); st.textContent='Received ✓'; st.className='file-status done';
+            if(url && name) {
+                const a = document.createElement('a'); a.className='download-link'; a.href=url; a.download=name; a.textContent='⬇ Download '+esc(name);
+                el.appendChild(a);
+            }
+        } else { st.textContent='Receiving... '+pct+'%'; st.className='file-status receiving'; }
+    }
+
+    // --- App Init & UI Hooks ---
+    usernameForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const raw = usernameInput.value; const username = sanitize(raw);
+        if(!username || username.length<2) { usernameError.textContent='Min 2 characters.'; return; }
+        btnJoin.disabled=true; usernameError.textContent='';
+        try {
+            const snap = await db.ref('users/'+username).once('value');
+            if(snap.exists()) {
+                const data = snap.val();
+                if(data && data.online && data.lastSeen && (Date.now() - data.lastSeen < 60000)) {
+                    usernameError.textContent='Username taken.'; btnJoin.disabled=false; return;
+                } else { await db.ref('users/'+username).remove(); await db.ref('signaling/'+username).remove(); }
+            }
+            await setupPresence(username); myUsername = username; myUsernameDisplay.textContent = username;
+            showScreen(screenUsers); listenUsers(); listenSignalling(); startHeartbeat(); startInactivityTimer(); startFullResetTimer();
+            notify('Joined as '+username, 'info');
+        } catch(err) { usernameError.textContent='Connection error. Retry.'; btnJoin.disabled=false; }
+    });
+
+    btnDisconnectMain.onclick = async ()=> {
+        await fullCleanup(); showScreen(screenUsername);
+        usernameInput.value=''; usernameError.textContent=''; btnJoin.disabled=false; notify('Disconnected.', 'info');
+    };
+
+    btnDisconnectPeer.onclick = async ()=> {
+        closePC(); await cleanSignalling(); connectionInProgress = false;
+        showScreen(screenUsers); listenUsers(); listenSignalling(); resetInactivityTimer(); notify('Disconnected from peer.', 'info');
+    };
+
+    document.addEventListener('click', () => {
+        if(screenUsers.classList.contains('active') && !connectionInProgress && !transferScreenShown) resetInactivityTimer();
+    });
+
+    window.addEventListener('beforeunload', ()=> {
+        clearAllTimers();
+        if(myUsername) {
+            db.ref('users/'+myUsername).remove().catch(()=>{});
+            db.ref('signaling/'+myUsername).remove().catch(()=>{});
+        }
+        if(peerConnection) peerConnection.close();
+    });
+
+    showScreen(screenUsername);
+    usernameInput.focus();
+})();
+</script>
+</body>
+</html>
